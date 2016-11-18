@@ -57,7 +57,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements
-        NavigationView.OnNavigationItemSelectedListener, OnMapReadyCallback, View.OnClickListener {
+        NavigationView.OnNavigationItemSelectedListener, OnMapReadyCallback {
 
     private FirebaseAuth mAuth;
     private FirebaseAuth.AuthStateListener mAuthListener;
@@ -101,6 +101,7 @@ public class MainActivity extends AppCompatActivity implements
                     DataHolder.userDatabaseReference =
                             DataHolder.database.getReference(FirebaseAuth.getInstance().getCurrentUser().getUid());
                     DataHolder.getInstance().setRole("driver");
+                    DataHolder.generateMetadata();
                     loginButton.setVisibility(View.GONE);
                     loginEmail.setVisibility(View.VISIBLE);
                     loginName.setVisibility(View.VISIBLE);
@@ -153,7 +154,7 @@ public class MainActivity extends AppCompatActivity implements
         showRange.setAdapter(showRangeAdapter);
         vehicleType.setSelection(4);
         shopType.setSelection(1);
-        showRange.setSelection(1);
+        showRange.setSelection(0);
         vehicleType.setOnItemSelectedListener(filterItemListener);
         vehicleType.setOnItemSelectedListener(filterItemListener);
         vehicleType.setOnItemSelectedListener(filterItemListener);
@@ -168,7 +169,7 @@ public class MainActivity extends AppCompatActivity implements
         nearByPlacesList = (RecyclerView) findViewById(R.id.nearby_places_list);
         nearByPlacesList.setLayoutManager(new LinearLayoutManager(this));
         nearByPlacesList.setHasFixedSize(true);
-        nearbyPlacesRecyclerAdapter = new NearbyPlacesRecyclerAdapter(nearbyPlaces);
+        nearbyPlacesRecyclerAdapter = new NearbyPlacesRecyclerAdapter(nearbyPlaces, nearbyPlacesCount, this);
         nearByPlacesList.setAdapter(nearbyPlacesRecyclerAdapter);
 
         progressDialog = new ProgressDialog(this);
@@ -187,13 +188,12 @@ public class MainActivity extends AppCompatActivity implements
             nearbyPlaces.clear();
             nearbyPlaces.addAll(getGooglePlaces.returnPlaceList());
             nearbyPlacesRecyclerAdapter.notifyDataSetChanged();
-            nearbyPlacesCount.setText("Order Counts : " + nearbyPlaces.size());
             mMap.clear();
             for (final Place place : nearbyPlaces) {
                 MarkerOptions markerAoptions = new MarkerOptions();
                 markerAoptions.position(place.getLocation())
                         .title(StringManipulation.CapsFirst(place.getName()))
-                        .icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_local_grocery_store_black_18dp));
+                        .icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_shopping_cart_black_24dp));
                 Marker markerA = mMap.addMarker(markerAoptions);
                 markerA.showInfoWindow();
             }
@@ -340,7 +340,7 @@ public class MainActivity extends AppCompatActivity implements
                     fetchOrders(oldLocation);
                     oldLocation = fusedLocationService.returnLocation();
                 }
-                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(fusedLocationService.returnLocation(), 13));
+                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(fusedLocationService.returnLocation(), 14));
             }
             return false;
         }
@@ -356,17 +356,17 @@ public class MainActivity extends AppCompatActivity implements
     private AdapterView.OnItemSelectedListener filterItemListener = new AdapterView.OnItemSelectedListener() {
         @Override
         public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-            locationChangedListener.sendMessage(new Message());
+
         }
         @Override
         public void onNothingSelected(AdapterView<?> parent) {}
     };
 
-    @Override
+    /*@Override
     public void onClick(View v) {
         vicinityOrderDetails.setState(BottomSheetBehavior.STATE_EXPANDED);
         if (vicinityOrderDetails.getState() == BottomSheetBehavior.STATE_EXPANDED)
             anchorFab.setVisibility(View.GONE);
         else anchorFab.setVisibility(View.VISIBLE);
-    }
+    }*/
 }

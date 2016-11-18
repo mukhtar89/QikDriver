@@ -11,7 +11,7 @@ import java.util.List;
 
 public enum QikList {
 
-    GROCERY(0, "Grocery",  "grocery_or_supermarket", new String[]{"supermarket"}, R.drawable.ic_local_grocery_store_white_48dp),
+    GROCERY(0, "Grocery",  "grocery_or_supermarket", new String[]{"supermarket","grocery"}, R.drawable.ic_local_grocery_store_white_48dp),
     RESTAURANT(0, "Restaurant", "restaurant", new String[]{"supermarket"}, R.drawable.ic_restaurant_white_48dp),
     CLOTHING(0, "Clothing", "clothing_store", new String[]{"supermarket"},  R.drawable.ic_shop_white_48dp),
     LAUNDRY(0, "Laundry", "laundry", new String[]{"supermarket"}, R.drawable.ic_local_laundry_service_white_48dp),

@@ -11,6 +11,7 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.VolleyLog;
 import com.android.volley.toolbox.JsonObjectRequest;
+import com.equinox.qikdriver.Enums.OrderStatus;
 import com.equinox.qikdriver.Enums.QikList;
 import com.equinox.qikdriver.Enums.Vehicle;
 import com.equinox.qikdriver.Models.Constants;
@@ -31,10 +32,16 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
-import static com.equinox.qikdriver.Enums.OrderStatus.CANCELLED;
+import static com.equinox.qikdriver.Models.Constants.DRIVER;
+import static com.equinox.qikdriver.Models.Constants.ORDERS;
+import static com.equinox.qikdriver.Models.Constants.ORDER_PAYLOAD;
+import static com.equinox.qikdriver.Models.Constants.ORDER_STATUS;
 
 /**
  * Created by mukht on 10/30/2016.
@@ -46,17 +53,16 @@ public class GetGooglePlaces {
     private String NORMAL = "1", SECONDARY = "2";
     private Dialog pDialog;
     private Handler placeHandler;
-    private List<Place> placeList = new ArrayList<>();
-    private HashSet<String> loadedPlaces;
+    private Hashtable<String,Place> placeTable = new Hashtable<>();
+    private Integer initialSize=0, counter;
 
     public GetGooglePlaces(Dialog pDialog, Handler placeHandler) {
         this.pDialog = pDialog;
         this.placeHandler = placeHandler;
-        loadedPlaces = new HashSet<>();
     }
 
     public synchronized void parsePlaces(LatLng location, final Vehicle vehicleType, QikList placeType, Integer range) {
-        placeList = new ArrayList<>();
+        placeTable = new Hashtable<>();
         List<QikList> placeTypes = new ArrayList<>();
         if (placeType == null) placeTypes = Arrays.asList(QikList.values());
         else placeTypes.add(placeType);
@@ -77,47 +83,76 @@ public class GetGooglePlaces {
         AppVolleyController.getInstance().getRequestQueue().addRequestFinishedListener(new RequestQueue.RequestFinishedListener<Object>() {
             @Override
             public void onRequestFinished(Request<Object> request) {
-                hidePDialog();
-                filterPlacesByWeight(vehicleType);
+                counter = 0;
+                new Timer().schedule(new TimerTask() {
+                    @Override
+                    public void run() {
+                        filterPlacesByWeight(vehicleType);
+                    }
+                },3000);
                 AppVolleyController.getInstance().getRequestQueue().removeRequestFinishedListener(this);
             }
         });
     }
 
-    private synchronized void filterPlacesByWeight(final Vehicle vehicleType) {
-        List<Place> tempPlaceList = placeList;
+    private void filterPlacesByWeight(final Vehicle vehicleType) {
+        List<Place> tempPlaceList = new ArrayList<>(placeTable.values());
         for (final Place place : tempPlaceList) {
             final DatabaseReference businessOrderReference = DataHolder.database.getReference()
-                    .child(place.getPlaceId()).child(Constants.ORDER);
-            businessOrderReference.addListenerForSingleValueEvent(new ValueEventListener() {
+                    .child(place.getPlaceId()).child(ORDERS);
+            businessOrderReference.addValueEventListener(new ValueEventListener() {
                 @Override
                 public void onDataChange(DataSnapshot dataSnapshot) {
-                    if (dataSnapshot.hasChildren()) {
-                        Iterator<DataSnapshot> iteratorIncoming = dataSnapshot.getChildren().iterator();
-                        HashMap<String, Object> iteratorObject;
-                        int redFlag = 0;
-                        while (iteratorIncoming.hasNext()) {
-                            DataSnapshot orderShot = iteratorIncoming.next();
-                            iteratorObject = (HashMap<String, Object>) orderShot.getValue();
-                            redFlag++;
-                            if ((Long) iteratorObject.get("orderPayload") > (vehicleType != null ? vehicleType.getWeight() : 100)
-                                    ||(iteratorObject.get("orderStatus")).equals(CANCELLED.getNodeName()))
-                                redFlag--;
-                        }
-                        if (redFlag == 0){
-                            placeList.remove(place);
-                            placeHandler.sendMessageAtFrontOfQueue(new Message());
-                        }
+                    try {
+                        if (dataSnapshot.hasChildren()) {
+                            Iterator<DataSnapshot> iteratorIncoming = dataSnapshot.getChildren().iterator();
+                            HashMap<String, Object> iteratorObject;
+                            while (iteratorIncoming.hasNext()) {
+                                DataSnapshot orderShot = iteratorIncoming.next();
+                                iteratorObject = (HashMap<String, Object>) orderShot.getValue();
+                                if ((Long) iteratorObject.get(ORDER_PAYLOAD) > (vehicleType != null ? vehicleType.getWeight() : 100)
+                                        || iteratorObject.containsKey(DRIVER)) {
+                                    handleFilterPlaces(place, false);
+                                    return;
+                                }
+                                switch (OrderStatus.valueOf(((String) iteratorObject.get(ORDER_STATUS)).substring(6).toUpperCase())) {
+                                    case CANCELLED:
+                                    case PICKED_UP:
+                                    case ENROUTE:
+                                    case DELIVERED:
+                                        handleFilterPlaces(place, false);
+                                        return;
+                                    default:
+                                        break;
+                                }
+                                handleFilterPlaces(place, true);
+                            }
+                        } else handleFilterPlaces(place, false);
+                    } catch (Exception e) {
+                        e.getMessage();
                     }
-                    else {
-                        placeList.remove(place);
-                        placeHandler.sendMessageAtFrontOfQueue(new Message());
-                    }
-                    businessOrderReference.removeEventListener(this);
                 }
                 @Override
                 public void onCancelled(DatabaseError databaseError) {}
             });
+        }
+    }
+    private synchronized void handleFilterPlaces(Place place, Boolean add) {
+        if (initialSize == 0)
+            initialSize = placeTable.size();
+        if (add) {
+            counter++;
+            if (!placeTable.containsKey(place.getPlaceId()))
+                placeTable.put(place.getPlaceId(), place);
+        }
+        else {
+            counter++;
+            if (placeTable.containsKey(place.getPlaceId()))
+                placeTable.remove(place.getPlaceId());
+        }
+        if (counter >= initialSize) {
+            hidePDialog();
+            placeHandler.sendMessage(new Message());
         }
     }
 
@@ -132,7 +167,7 @@ public class GetGooglePlaces {
                     for (int i = 0; i < listObjects.length(); i++) {
                         JSONObject obj = listObjects.getJSONObject(i);
                         Place place = new Place();
-                        if (!loadedPlaces.contains(obj.getString("place_id"))){
+                        if (!placeTable.contains(obj.getString("place_id"))){
                             JSONObject location = obj.getJSONObject("geometry").getJSONObject("location");
                             place.setLocation(new LatLng(location.getDouble("lat"), location.getDouble("lng")));
                             place.setIconURL(obj.getString("icon"));
@@ -141,16 +176,19 @@ public class GetGooglePlaces {
                                 JSONObject openingHours = obj.getJSONObject("opening_hours");
                                 place.setOpenNow(openingHours.getBoolean("open_now"));
                             }
-                            JSONArray photos = obj.getJSONArray("photos");
-                            JSONObject photo = photos.getJSONObject(0);
-                            Photo tempPhoto = new Photo(photo.getInt("width"), photo.getInt("height"), null, photo.getString("photo_reference"));
-                            List<Photo> photoList= new ArrayList<>();
-                            photoList.add(tempPhoto);
-                            place.setPhoto(photoList);
+                            if (obj.has("photos")) {
+                                JSONArray photos = obj.getJSONArray("photos");
+                                JSONObject photo = photos.getJSONObject(0);
+                                Photo tempPhoto = new Photo(photo.getInt("width"), photo.getInt("height"), null, photo.getString("photo_reference"));
+                                place.setPhoto(tempPhoto);
+                            }
                             place.setPlaceId(obj.getString("place_id"));
                             place.setVicinity(obj.getString("vicinity"));
-                            placeList.add(place);
-                            loadedPlaces.add(obj.getString("place_id"));
+                            if (DataHolder.getInstance().getPlaceMap().containsKey(place.getPlaceId()))
+                                DataHolder.getInstance().getPlaceMap().put(place.getPlaceId(),
+                                        DataHolder.getInstance().getPlaceMap().get(place.getPlaceId()).mergePlace(place));
+                            else DataHolder.getInstance().getPlaceMap().put(place.getPlaceId(), place);
+                            placeTable.put(place.getPlaceId(),place);
                         }
                     }
                 }
@@ -174,6 +212,6 @@ public class GetGooglePlaces {
     }
 
     public List<Place> returnPlaceList() {
-        return placeList;
+        return new ArrayList<>(placeTable.values());
     }
 }

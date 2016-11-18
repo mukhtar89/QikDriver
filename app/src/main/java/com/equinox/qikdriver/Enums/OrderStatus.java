@@ -9,7 +9,10 @@ public enum OrderStatus {
     INCOMING("order_incoming"),
     PROCESSING("order_processing"),
     COMPLETED("order_completed"),
-    CANCELLED("order_cancelled");
+    CANCELLED("order_cancelled"),
+    PICKED_UP("picked_up"),
+    ENROUTE("enroute"),
+    DELIVERED("delivered");
 
     private String nodeName;
 

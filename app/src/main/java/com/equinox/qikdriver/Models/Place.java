@@ -12,13 +12,57 @@ public class Place {
 
     private String placeId, name, vicinity;
     private LatLng location;
-    private Boolean openNow;
-    private List<Photo> photos;
-    private String iconURL, gMapURL, webURL;
+    private Boolean openNow, isPartner;
+    private Photo photos;
+    private String iconURL, gMapURL, webURL, profileImageURL;
     private Double totalRating;
     private String address, phoneNumber;
     private Periods periods;
+    private Float distanceFromCurrent;
+    private Integer timeFromCurrent;
 
+    public Place mergePlace(Place addPlace) {
+        if (vicinity == null)
+            vicinity = addPlace.getVicinity();
+        if (location == null)
+            location = addPlace.getLocation();
+        if (openNow == null)
+            openNow = addPlace.getOpenNow();
+        if (isPartner == null)
+            isPartner = addPlace.getPartner();
+        if (iconURL == null)
+            iconURL = addPlace.getIconURL();
+        if (gMapURL == null)
+            gMapURL = addPlace.getgMapURL();
+        if (webURL == null)
+            webURL = addPlace.getWebURL();
+        if (totalRating == null)
+            totalRating = addPlace.getTotalRating();
+        if (address == null)
+            address = addPlace.getAddress();
+        if (phoneNumber == null)
+            phoneNumber = addPlace.getPhoneNumber();
+        if (periods == null)
+            periods = addPlace.getPeriods();
+        if (distanceFromCurrent == null)
+            distanceFromCurrent = addPlace.getDistanceFromCurrent();
+        if (timeFromCurrent == null)
+            timeFromCurrent = addPlace.getTimeFromCurrent();
+        if (profileImageURL == null)
+            profileImageURL = addPlace.getProfileImageURL();
+        return this;
+    }
+
+    public void setDistanceFromCurrent(String distance) {
+        if (distance.length()>4)
+            this.distanceFromCurrent = Float.parseFloat(distance.substring(0, distance.length()-3));
+    }
+    public void setTimeFromCurrent(String time) {
+        if (time.length()>4)
+            this.timeFromCurrent = Integer.parseInt(time.substring(0, time.length()-4).replaceAll(" ",""));
+    }
+    public Float getDistanceFromCurrent() {   return distanceFromCurrent;  }
+    public Integer getTimeFromCurrent() { return timeFromCurrent; }
     public String getIconURL() {
         return iconURL;
     }
@@ -55,10 +99,10 @@ public class Place {
     public void setOpenNow(Boolean openNow) {
         this.openNow = openNow;
     }
-    public List<Photo> getPhoto() {
+    public Photo getPhoto() {
         return photos;
     }
-    public void setPhoto(List<Photo> photos) { this.photos = photos;  }
+    public void setPhoto(Photo photos) { this.photos = photos;  }
     public Double getTotalRating() {
         return totalRating;
     }
@@ -94,5 +138,17 @@ public class Place {
     }
     public void setPeriods(Periods periods) {
         this.periods = periods;
+    }
+    public Boolean getPartner() {
+        return isPartner;
+    }
+    public void setPartner(Boolean partner) {
+        isPartner = partner;
+    }
+    public String getProfileImageURL() {
+        return profileImageURL;
+    }
+    public void setProfileImageURL(String profileImageURL) {
+        this.profileImageURL = profileImageURL;
     }
 }

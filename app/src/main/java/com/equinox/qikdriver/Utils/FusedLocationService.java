@@ -48,7 +48,7 @@ public class FusedLocationService implements GoogleApiClient.ConnectionCallbacks
             if (mLocation != null) {
                 gLocation = new LatLng(mLocation.getLatitude(), mLocation.getLongitude());
                 locationChangedListener.sendMessage(new Message());
-                DataHolder.fetchLocationMetadata(null, mLocation, activity);
+                DataHolder.fetchLocationMetadata(mLocation, activity);
             }
         }
         else if (!locationPermission.getDialogStatus()) {

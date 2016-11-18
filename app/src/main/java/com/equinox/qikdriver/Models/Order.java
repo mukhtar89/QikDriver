@@ -2,6 +2,7 @@ package com.equinox.qikdriver.Models;
 
 import com.google.android.gms.maps.model.LatLng;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -10,33 +11,34 @@ import java.util.List;
 
 public class Order {
 
-    private String orderId;
-    private String orderFrom, orderFromName, orderFromEmail, orderFromPhotoURL, orderFromPhone, orderStatus;
-    private LatLng locationFrom;
-    private List<Item> orderItems;
+    private String id, status;
+    private User from, driver;
+    private Place shop = new Place();
+    private List<Item> items = new ArrayList<>();
     private Long timestamp;
-    private Boolean exchangeItem;
+    private Boolean exchange;
+    private Float weight;
 
     public Float getOrderValue() {
         Float value = (float) 0.00;
-        for (Item item : orderItems) {
+        for (Item item : items) {
             if (item.getItemPriceValue() == null)  return null;
             value += (item.getItemPriceValue() * item.getItemQuantity());
         }
         return value;
     }
 
-    public String getOrderId() {
-        return orderId;
+    public String getId() {
+        return id;
     }
-    public void setOrderId(String orderId) {
-        this.orderId = orderId;
+    public void setId(String id) {
+        this.id = id;
     }
-    public List<Item> getOrderItems() {
-        return orderItems;
+    public List<Item> getItems() {
+        return items;
     }
-    public void setOrderItems(List<Item> orderItems) {
-        this.orderItems = orderItems;
+    public void setItems(List<Item> items) {
+        this.items = items;
     }
     public Long getTimestamp() {
         return timestamp;
@@ -44,52 +46,42 @@ public class Order {
     public void setTimestamp(Long timestamp) {
         this.timestamp = timestamp;
     }
-    public Boolean getExchangeItem() {
-        return exchangeItem;
+    public Boolean getExchange() {
+        return exchange;
     }
-    public void setExchangeItem(Boolean exchangeItem) {
-        this.exchangeItem = exchangeItem;
+    public void setExchange(Boolean exchange) {
+        this.exchange = exchange;
     }
-    public String getOrderFrom() {
-        return orderFrom;
+    public void setFrom(User from) {
+        this.from = from;
     }
-    public void setOrderFrom(String orderFrom) {
-        this.orderFrom = orderFrom;
+    public User getFrom() {
+        if (from == null)
+            return new User();
+        return from;
     }
-    public String getOrderFromName() {
-        return orderFromName;
+    public void setDriver(User driver) {
+        this.driver = driver;
     }
-    public void setOrderFromName(String orderFromName) {
-        this.orderFromName = orderFromName;
+    public User getDriver() {
+        return driver;
     }
-    public String getOrderFromEmail() {
-        return orderFromEmail;
+    public Place getShop() {
+        return shop;
     }
-    public void setOrderFromEmail(String orderFromEmail) {
-        this.orderFromEmail = orderFromEmail;
+    public void setShop(Place shop) {
+        this.shop = shop;
     }
-    public String getOrderFromPhotoURL() {
-        return orderFromPhotoURL;
+    public String getStatus() {
+        return status;
     }
-    public void setOrderFromPhotoURL(String orderFromPhotoURL) {
-        this.orderFromPhotoURL = orderFromPhotoURL;
+    public void setStatus(String status) {
+        this.status = status;
     }
-    public String getOrderFromPhone() {
-        return orderFromPhone;
+    public Float getWeight() {
+        return weight;
     }
-    public void setOrderFromPhone(String orderFromPhone) {
-        this.orderFromPhone = orderFromPhone;
-    }
-    public LatLng getLocationFrom() {
-        return locationFrom;
-    }
-    public void setLocationFrom(LatLng locationFrom) {
-        this.locationFrom = locationFrom;
-    }
-    public String getOrderStatus() {
-        return orderStatus;
-    }
-    public void setOrderStatus(String orderStatus) {
-        this.orderStatus = orderStatus;
+    public void setWeight(Float weight) {
+        this.weight = weight;
     }
 }
